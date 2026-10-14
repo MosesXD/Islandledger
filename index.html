@@ -23,6 +23,30 @@
 <form id="goalForm" class="goal-form"><div><label for="goalName">Goal name</label><input id="goalName" maxlength="60" placeholder="e.g. Emergency fund" required></div><div><label for="goalTarget">Target (TTD)</label><input id="goalTarget" type="number" min="0.01" step="0.01" placeholder="3000" required></div><div><label for="goalSaved">Already saved (TTD)</label><input id="goalSaved" type="number" min="0" step="0.01" value="0" required></div><button type="submit">＋ Add goal</button></form>
 <div id="goalsEmpty" class="empty"><p>No savings goals yet. Add one to track your progress.</p></div><div id="goalsList" class="goals-list"></div>
 </section>
+<section class="panel budget-studio" id="budgetStudio">
+<p class="eyebrow">PLAN BEFORE YOU SPEND</p><h2>Budget Studio</h2>
+<p class="budget-intro">Create a plan for bills, groceries, car costs, savings, website promotion, or anything else. These planned amounts do not become transactions automatically.</p>
+<div class="budget-top-grid">
+  <div><label for="budgetPlanName">Plan name</label><input id="budgetPlanName" maxlength="60" value="My Budget" placeholder="e.g. October Household Budget"></div>
+  <div><label for="budgetTotal">Total budget (TTD)</label><input id="budgetTotal" type="number" min="0" step="0.01" value="500"></div>
+</div>
+<div class="budget-tools">
+  <div><label for="distributionMode">When changing the total</label><select id="distributionMode"><option value="proportional">Adjust proportionally</option><option value="equal">Divide equally</option><option value="manual">Keep amounts as they are</option></select></div>
+  <div><label for="savedBudgetPlans">Saved plans</label><select id="savedBudgetPlans"><option value="">Choose a saved plan</option></select></div>
+</div>
+<div class="budget-actions"><button id="saveBudgetPlan" type="button">Save plan</button><button id="loadBudgetPlan" class="secondary-button" type="button">Load selected</button><button id="deleteBudgetPlan" class="secondary-button" type="button">Delete selected</button></div>
+<p id="budgetMessage" class="budget-message" role="status"></p>
+<div class="budget-summary">
+  <div><span>Allocated</span><strong id="budgetAllocated">TT$0.00</strong></div>
+  <div><span>Remaining</span><strong id="budgetRemaining">TT$500.00</strong></div>
+  <div><span>Categories</span><strong id="budgetCategoryCount">7</strong></div>
+</div>
+<div id="budgetStatus" class="budget-status" role="status">You have money left to allocate.</div>
+<div class="budget-category-heading"><div><p class="eyebrow">YOUR ALLOCATIONS</p><h3>Adjust each category</h3></div><button id="addBudgetCategory" class="secondary-button" type="button">＋ Add category</button></div>
+<div id="budgetCategories" class="budget-categories"></div>
+<form id="newBudgetCategoryForm" class="new-budget-category" hidden><div><label for="newBudgetCategoryName">Category name</label><input id="newBudgetCategoryName" maxlength="40" placeholder="e.g. Pet care" required></div><button type="submit">Add category</button><button id="cancelBudgetCategory" class="secondary-button" type="button">Cancel</button></form>
+<p class="budget-note">Budget plans are saved in this browser only. They are separate from your transactions and savings goals.</p>
+</section>
 <section class="panel"><p class="eyebrow">SPENDING SNAPSHOT</p><h2>Where your money goes</h2><div id="categoryBreakdown">Add an expense to see categories.</div></section>
 <aside><b>Prototype, not a bank.</b> Entries and goals are stored in this browser only. There is no bank connection, encryption, or sync. Use fictional data; never enter sensitive information. Savings progress is manually entered and does not automatically move money from your balance.</aside>
 <footer>Made as a learning project · TTD · <span id="year"></span></footer>
