@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A local-first TTD income, expense, and savings tracker learning prototype.">
+<title>Island Ledger — Money, made clearer</title><link rel="stylesheet" href="style.css"><script src="app.js" defer></script>
+</head>
+<body>
+<header><a class="brand" href="#"><b>IL</b> island<span>ledger</span></a><span class="tag">LEARNING PROTOTYPE</span></header>
+<main>
+<section class="intro"><p class="eyebrow">YOUR MONEY, IN ONE PLACE</p><h1>Make room for<br><em>what matters.</em></h1><p>A simple way to track everyday money and savings goals in Trinidad and Tobago dollars.</p><small>● Stored in this browser only</small></section>
+<section class="totals"><article><span>Total income</span><strong id="incomeTotal">TT$0.00</strong></article><article><span>Total expenses</span><strong id="expenseTotal">TT$0.00</strong></article><article><span>Net balance</span><strong id="balanceTotal">TT$0.00</strong></article></section>
+<div class="columns">
+<section class="panel"><p class="eyebrow">NEW ENTRY</p><h2>Add a transaction</h2>
+<form id="transactionForm">
+<label for="description">What was it for?</label><input id="description" name="description" maxlength="80" placeholder="e.g. Fortnightly pay" required>
+<div class="two"><div><label for="amount">Amount (TTD)</label><input id="amount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></div><div><label for="type">Type</label><select id="type" name="type"><option value="expense">Expense</option><option value="income">Income</option></select></div></div>
+<div class="two"><div><label for="category">Category</label><select id="category" name="category"><option>Food</option><option>Transport</option><option>Rent & bills</option><option>Health</option><option>Personal</option><option>Education</option><option>Savings</option><option>Work</option><option>Other</option></select></div><div><label for="date">Date</label><input id="date" name="date" type="date" required></div></div>
+<button type="submit">＋ Add transaction</button><p id="formMessage" role="status"></p></form></section>
+<section class="panel"><div class="listhead"><div><p class="eyebrow">YOUR ACTIVITY</p><h2>Recent transactions</h2></div><button id="clearButton" class="textbutton" type="button">Clear all</button></div>
+<div id="emptyState" class="empty"><h3>Your story starts here</h3><p>Add an income or expense to see the summary update.</p></div><ul id="transactionList" aria-live="polite"></ul></section></div>
+<section class="panel"><p class="eyebrow">SAVINGS PLAN</p><h2>Create a savings goal</h2>
+<form id="goalForm" class="goal-form"><div><label for="goalName">Goal name</label><input id="goalName" maxlength="60" placeholder="e.g. Emergency fund" required></div><div><label for="goalTarget">Target (TTD)</label><input id="goalTarget" type="number" min="0.01" step="0.01" placeholder="3000" required></div><div><label for="goalSaved">Already saved (TTD)</label><input id="goalSaved" type="number" min="0" step="0.01" value="0" required></div><button type="submit">＋ Add goal</button></form>
+<div id="goalsEmpty" class="empty"><p>No savings goals yet. Add one to track your progress.</p></div><div id="goalsList" class="goals-list"></div>
+</section>
+<section class="panel"><p class="eyebrow">SPENDING SNAPSHOT</p><h2>Where your money goes</h2><div id="categoryBreakdown">Add an expense to see categories.</div></section>
+<aside><b>Prototype, not a bank.</b> Entries and goals are stored in this browser only. There is no bank connection, encryption, or sync. Use fictional data; never enter sensitive information. Savings progress is manually entered and does not automatically move money from your balance.</aside>
+<footer>Made as a learning project · TTD · <span id="year"></span></footer>
+</main></body></html>
