@@ -59,10 +59,21 @@
   function saveGoals(){ try {localStorage.setItem(GOAL_KEY,JSON.stringify(goals));} catch(e){$("goalMessage") && ($("goalMessage").textContent="Browser storage unavailable; changes may not persist.");}}
   function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
   function makeId(){return crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`;}
+  function renderMoneyFlow(){
+    const host=$("moneyFlowChart");if(!host)return;
+    const now=new Date();const months=[];
+    for(let i=6;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`,label:d.toLocaleDateString(undefined,{month:"short"}),income:0,expense:0});}
+    transactions.forEach(t=>{const month=months.find(m=>m.key===t.date.slice(0,7));if(!month)return;const amount=displayAmount(t);if(amount===null)return;month[t.type]+=amount;});
+    const max=Math.max(1,...months.flatMap(m=>[m.income,m.expense]));
+    host.replaceChildren();
+    if(!transactions.length){const note=el("p","chart-empty","Add transactions to see your monthly money flow.");host.append(note);return;}
+    months.forEach(month=>{const col=el("div","chart-month"),bars=el("div","chart-bars");const inc=el("span","chart-bar"),exp=el("span","chart-bar expense");inc.style.height=`${Math.max(2,month.income/max*100)}%`;exp.style.height=`${Math.max(2,month.expense/max*100)}%`;inc.title=`Income: ${formatMoney(month.income,settings.displayCurrency)}`;exp.title=`Expenses: ${formatMoney(month.expense,settings.displayCurrency)}`;bars.append(inc,exp);col.append(bars,el("small","",month.label));host.append(col);});
+  }
   function renderTransactions(){
     const income=transactions.filter(t=>t.type==="income").reduce((s,t)=>s+(displayAmount(t)??0),0);
     const expenses=transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+(displayAmount(t)??0),0);
     $("incomeTotal").textContent=formatMoney(income,settings.displayCurrency);$("expenseTotal").textContent=formatMoney(expenses,settings.displayCurrency);$("balanceTotal").textContent=formatMoney(income-expenses,settings.displayCurrency);
+    renderMoneyFlow();
     if ($("displayCurrency")) $("displayCurrency").value=settings.displayCurrency;
     if (rates && transactions.some(t=>displayAmount(t)===null) && $("rateNote")) $("rateNote").textContent="Some currency rates are unavailable; affected amounts are excluded from converted totals.";
     const list=$("transactionList");list.replaceChildren();$("emptyState").hidden=transactions.length>0;
@@ -83,6 +94,8 @@
     entries.forEach(([name,value])=>{const row=el("div","category"),head=el("div","category-head");head.append(el("strong","",name),el("span","",formatMoney(value,settings.displayCurrency)));const bar=el("div","bar");const fill=el("span");fill.style.width=`${value/entries[0][1]*100}%`;bar.append(fill);row.append(head,bar);area.append(row);});
   }
   function renderGoals(){
+    const savedTotal=goals.reduce((sum,g)=>sum+(Number(g.saved)||0),0);
+    if($("savingsTotal")) $("savingsTotal").textContent=formatMoney(savedTotal,"TTD");
     const list=$("goalsList");list.replaceChildren();$("goalsEmpty").hidden=goals.length>0;
     goals.forEach(g=>{
       const card=el("article","goal-card"),head=el("div","goal-head");
@@ -163,9 +176,21 @@
     const total = Math.max(0, Number(budgetTotalInput.value) || 0);
     const allocated = roundMoney(budgetCategories.reduce((sum,c)=>sum+(Number(c.amount)||0),0));
     const remaining = roundMoney(total-allocated);
-    $("budgetAllocated").textContent = money.format(allocated);
-    $("budgetRemaining").textContent = `${remaining < 0 ? "−" : ""}${money.format(Math.abs(remaining))}`;
+    $("budgetAllocated").textContent = formatMoney(allocated,settings.displayCurrency);
+    $("budgetRemaining").textContent = `${remaining < 0 ? "−" : ""}${formatMoney(Math.abs(remaining),settings.displayCurrency)}`;
     $("budgetCategoryCount").textContent = String(budgetCategories.length);
+    if($("budgetStudioAllocated")) $("budgetStudioAllocated").textContent=formatMoney(allocated,settings.displayCurrency);
+    if($("budgetStudioRemaining")) $("budgetStudioRemaining").textContent=`${remaining<0?"−":""}${formatMoney(Math.abs(remaining),settings.displayCurrency)}`;
+    if($("budgetStudioCategoryCount")) $("budgetStudioCategoryCount").textContent=String(budgetCategories.length);
+    if($("budgetDonutTotal")) $("budgetDonutTotal").textContent=formatMoney(total,settings.displayCurrency);
+    const donut=$("budgetDonut");
+    if(donut){
+      const palette=["#7548ef","#a78bfa","#4b3c9e","#c4b5fd","#6550bd","#322c72","#9279e8"];
+      let cursor=0;const stops=[];
+      budgetCategories.forEach((category,index)=>{const pct=total>0?Math.max(0,Number(category.amount)||0)/total*100:0;const next=Math.min(100,cursor+pct);stops.push(`${palette[index%palette.length]} ${cursor}% ${next}%`);cursor=next;});
+      if(cursor<100)stops.push(`rgba(120,110,180,.18) ${cursor}% 100%`);
+      donut.style.background=stops.length?`conic-gradient(${stops.join(",")})`:"conic-gradient(#322c72 0 100%)";
+    }
     const status = $("budgetStatus"); status.classList.toggle("over", remaining < -0.009);
     if (remaining < -0.009) status.textContent = `Over budget by ${money.format(Math.abs(remaining))}. Reduce one or more categories.`;
     else if (Math.abs(remaining) < 0.009) status.textContent = "Fully allocated — your budget balances.";
@@ -224,12 +249,21 @@
 
   populateCurrencySelect($("displayCurrency"),settings.displayCurrency);
   populateCurrencySelect($("transactionCurrency"),"TTD");
-  if ($("monthLabel")) $("monthLabel").textContent=new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  const monthText=new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  if ($("monthLabel")) $("monthLabel").textContent=monthText;
+  if ($("monthLabelDesktop")) $("monthLabelDesktop").textContent=monthText;
   $("displayCurrency").addEventListener("change",()=>{
     settings.displayCurrency=$("displayCurrency").value;
     try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch(e){}
-    renderTransactions();
+    renderTransactions();renderBudgetSummary();
   });
+  const menuToggle=$("menuToggle"),sidebar=$("sidebar"),scrim=$("sidebarScrim");
+  function closeSidebar(){sidebar.classList.remove("open");scrim.classList.remove("visible");menuToggle.setAttribute("aria-expanded","false");}
+  menuToggle.addEventListener("click",()=>{const open=!sidebar.classList.contains("open");sidebar.classList.toggle("open",open);scrim.classList.toggle("visible",open);menuToggle.setAttribute("aria-expanded",String(open));});
+  scrim.addEventListener("click",closeSidebar);
+  sidebar.querySelectorAll("a").forEach(link=>link.addEventListener("click",closeSidebar));
+  $("darkTheme").addEventListener("click",()=>{document.body.classList.remove("light-theme");$("darkTheme").classList.add("selected");$("lightTheme").classList.remove("selected");});
+  $("lightTheme").addEventListener("click",()=>{document.body.classList.add("light-theme");$("lightTheme").classList.add("selected");$("darkTheme").classList.remove("selected");});
   async function loadExchangeRates(){
     const note=$("rateNote");
     try{
