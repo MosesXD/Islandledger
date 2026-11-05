@@ -1,7 +1,13 @@
 (() => {
-  const TX_KEY = "island-ledger-transactions-v1";
-  const GOAL_KEY = "island-ledger-goals-v1";
-  const SETTINGS_KEY = "island-ledger-settings-v1";
+  const TX_KEY = "island-ledger-official-transactions-v1";
+  const GOAL_KEY = "island-ledger-official-goals-v1";
+  const SETTINGS_KEY = "island-ledger-official-settings-v1";
+  const BUDGET_KEY = "island-ledger-official-budget-plans-v1";
+  // Copy any pre-separation data into the official ledger once. Legacy keys remain as backups.
+  [["island-ledger-transactions-v1",TX_KEY],["island-ledger-goals-v1",GOAL_KEY],["island-ledger-settings-v1",SETTINGS_KEY],["island-ledger-budget-plans-v1",BUDGET_KEY]].forEach(([oldKey,newKey])=>{
+    try { if(localStorage.getItem(newKey)===null){const oldValue=localStorage.getItem(oldKey);if(oldValue!==null)localStorage.setItem(newKey,oldValue);} }
+    catch(error){console.warn("Could not preserve previous ledger data",error);}
+  });
   const CURRENCIES = [
     ["TTD","Trinidad and Tobago Dollar"],["XCD","East Caribbean Dollar"],["BBD","Barbadian Dollar"],
     ["JMD","Jamaican Dollar"],["BSD","Bahamian Dollar"],["BZD","Belize Dollar"],["GYD","Guyanese Dollar"],
@@ -71,7 +77,7 @@
     const totals=new Map();transactions.filter(t=>t.type==="expense").forEach(t=>{const value=displayAmount(t);if(value!==null)totals.set(t.category,(totals.get(t.category)||0)+value);});
     const area=$("categoryBreakdown");area.replaceChildren();const entries=[...totals.entries()].sort((a,b)=>b[1]-a[1]);
     if(!entries.length){area.textContent="Add an expense to see categories.";return;}
-    entries.forEach(([name,value])=>{const row=el("div","category"),head=el("div","category-head");head.append(el("strong","",name),el("span","",money.format(value)));const bar=el("div","bar");const fill=el("span");fill.style.width=`${value/entries[0][1]*100}%`;bar.append(fill);row.append(head,bar);area.append(row);});
+    entries.forEach(([name,value])=>{const row=el("div","category"),head=el("div","category-head");head.append(el("strong","",name),el("span","",formatMoney(value,settings.displayCurrency)));const bar=el("div","bar");const fill=el("span");fill.style.width=`${value/entries[0][1]*100}%`;bar.append(fill);row.append(head,bar);area.append(row);});
   }
   function renderGoals(){
     const list=$("goalsList");list.replaceChildren();$("goalsEmpty").hidden=goals.length>0;
@@ -100,7 +106,6 @@
   });
 
   // Budget Studio is stored separately from transactions and savings goals.
-  const BUDGET_KEY = "island-ledger-budget-plans-v1";
   const DEFAULT_BUDGET_CATEGORIES = [
     {id:"rent",name:"Rent & bills",amount:100},
     {id:"groceries",name:"Groceries & food",amount:100},
