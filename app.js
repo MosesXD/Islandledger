@@ -55,6 +55,7 @@
     const expenses=transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+(displayAmount(t)??0),0);
     $("incomeTotal").textContent=formatMoney(income,settings.displayCurrency);$("expenseTotal").textContent=formatMoney(expenses,settings.displayCurrency);$("balanceTotal").textContent=formatMoney(income-expenses,settings.displayCurrency);
     if ($("displayCurrency")) $("displayCurrency").value=settings.displayCurrency;
+    if (rates && transactions.some(t=>displayAmount(t)===null) && $("rateNote")) $("rateNote").textContent="Some currency rates are unavailable; affected amounts are excluded from converted totals.";
     const list=$("transactionList");list.replaceChildren();$("emptyState").hidden=transactions.length>0;
     [...transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt-a.createdAt).forEach(t=>{
       const li=el("li","transaction"),info=el("div","transaction-info");
