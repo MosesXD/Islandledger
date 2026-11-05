@@ -1,20 +1,16 @@
 (() => {
-  const RESET_KEY = "island-ledger-data-reset-2026-11-v3";
-  const OLD_KEYS = [
-    "island-ledger-transactions-v1","island-ledger-goals-v1","island-ledger-settings-v1","island-ledger-budget-plans-v1",
-    "island-ledger-official-transactions-v1","island-ledger-official-goals-v1","island-ledger-official-settings-v1","island-ledger-official-budget-plans-v1",
-    "island-ledger-concept-transactions-v1","island-ledger-concept-settings-v1"
-  ];
-  try {
-    if (localStorage.getItem(RESET_KEY) !== "complete") {
-      OLD_KEYS.forEach(key => localStorage.removeItem(key));
-      localStorage.setItem(RESET_KEY, "complete");
-    }
-  } catch (error) { console.warn("Ledger reset could not access browser storage", error); }
-  const TX_KEY = "island-ledger-official-v2-transactions";
-  const GOAL_KEY = "island-ledger-official-v2-goals";
-  const SETTINGS_KEY = "island-ledger-official-v2-settings";
-  const BUDGET_KEY = "island-ledger-official-v2-budget-plans";
+  const TX_KEY = "island-ledger-official-v3-transactions";
+  const GOAL_KEY = "island-ledger-official-v3-goals";
+  const SETTINGS_KEY = "island-ledger-official-v3-settings";
+  const BUDGET_KEY = "island-ledger-official-v3-budget-plans";
+  const migrate = (oldKey,newKey) => {
+    try { if (localStorage.getItem(newKey)===null) { const value=localStorage.getItem(oldKey); if(value!==null)localStorage.setItem(newKey,value); } }
+    catch(error) { console.warn("Could not migrate previous official ledger data",error); }
+  };
+  migrate("island-ledger-official-v2-transactions",TX_KEY);
+  migrate("island-ledger-official-v2-goals",GOAL_KEY);
+  migrate("island-ledger-official-v2-settings",SETTINGS_KEY);
+  migrate("island-ledger-official-v2-budget-plans",BUDGET_KEY);
   const CURRENCIES = [
     ["TTD","Trinidad and Tobago Dollar"],["XCD","East Caribbean Dollar"],["BBD","Barbadian Dollar"],
     ["JMD","Jamaican Dollar"],["BSD","Bahamian Dollar"],["BZD","Belize Dollar"],["GYD","Guyanese Dollar"],
@@ -66,36 +62,25 @@
   function renderTransactions(){
     const income=transactions.filter(t=>t.type==="income").reduce((s,t)=>s+(displayAmount(t)??0),0);
     const expenses=transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+(displayAmount(t)??0),0);
-    $("incomeTotal").textContent=formatMoney(income,settings.displayCurrency);
-    $("expenseTotal").textContent=formatMoney(expenses,settings.displayCurrency);
-    $("balanceTotal").textContent=formatMoney(income-expenses,settings.displayCurrency);
+    $("incomeTotal").textContent=formatMoney(income,settings.displayCurrency);$("expenseTotal").textContent=formatMoney(expenses,settings.displayCurrency);$("balanceTotal").textContent=formatMoney(income-expenses,settings.displayCurrency);
     if ($("displayCurrency")) $("displayCurrency").value=settings.displayCurrency;
     if (rates && transactions.some(t=>displayAmount(t)===null) && $("rateNote")) $("rateNote").textContent="Some currency rates are unavailable; affected amounts are excluded from converted totals.";
     const list=$("transactionList");list.replaceChildren();$("emptyState").hidden=transactions.length>0;
-    [...transactions].sort((a,b)=>b.date.localeCompare(a.date)||(Number(b.createdAt)||0)-(Number(a.createdAt)||0)).forEach(t=>{
-      const row=el("tr"),description=el("td"),category=el("td"),date=el("td"),amountCell=el("td",`align-right ${t.type==="income"?"amount-income":"amount-expense"}`),action=el("td");
-      description.append(el("strong","",t.description));
-      category.append(el("span","category-pill",t.category));
-      date.textContent=t.date;
+    [...transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt-a.createdAt).forEach(t=>{
+      const li=el("li","transaction"),info=el("div","transaction-info");
+      info.append(el("strong","",t.description),el("small","",`${t.category} · ${t.date}`));
       const converted=displayAmount(t);
       const shown=converted===null?formatMoney(t.amount,t.currency||"TTD"):formatMoney(converted,settings.displayCurrency);
       const original=(t.currency||"TTD")!==settings.displayCurrency&&converted!==null?" · "+formatMoney(t.amount,t.currency||"TTD"):"";
-      amountCell.textContent=(t.type==="income"?"+":"−")+shown+original;
-      const remove=el("button","delete-button","×");remove.type="button";remove.setAttribute("aria-label",`Delete ${t.description}`);
+      const amount=el("span",`amount ${t.type}`,`${t.type==="income"?"+":"−"}${shown}${original}`);
+      const remove=el("button","remove","×");remove.type="button";remove.setAttribute("aria-label",`Delete ${t.description}`);
       remove.addEventListener("click",()=>{transactions=transactions.filter(x=>x.id!==t.id);saveTransactions();renderTransactions();});
-      action.append(remove);row.append(description,category,date,amountCell,action);list.append(row);
+      li.append(info,amount,remove);list.append(li);
     });
-    const totals=new Map();
-    transactions.filter(t=>t.type==="expense").forEach(t=>{const value=displayAmount(t);if(value!==null)totals.set(t.category,(totals.get(t.category)||0)+value);});
+    const totals=new Map();transactions.filter(t=>t.type==="expense").forEach(t=>{const value=displayAmount(t);if(value!==null)totals.set(t.category,(totals.get(t.category)||0)+value);});
     const area=$("categoryBreakdown");area.replaceChildren();const entries=[...totals.entries()].sort((a,b)=>b[1]-a[1]);
     if(!entries.length){area.textContent="Add an expense to see categories.";return;}
-    entries.forEach(([name,value])=>{
-      const row=el("div","bar-row"),head=el("div","bar-label");
-      head.append(el("span","",name),el("span","",formatMoney(value,settings.displayCurrency)));
-      const track=el("div","bar-track"),fill=el("div","bar-fill");
-      fill.style.width=`${Math.max(3,value/entries[0][1]*100)}%`;
-      track.append(fill);row.append(head,track);area.append(row);
-    });
+    entries.forEach(([name,value])=>{const row=el("div","category"),head=el("div","category-head");head.append(el("strong","",name),el("span","",formatMoney(value,settings.displayCurrency)));const bar=el("div","bar");const fill=el("span");fill.style.width=`${value/entries[0][1]*100}%`;bar.append(fill);row.append(head,bar);area.append(row);});
   }
   function renderGoals(){
     const list=$("goalsList");list.replaceChildren();$("goalsEmpty").hidden=goals.length>0;
@@ -261,8 +246,5 @@
     }
   }
   $("clearButton").addEventListener("click",()=>{if(!transactions.length){$("formMessage").textContent="No entries to clear.";return;}if(confirm("Delete all transactions saved in this browser? Savings goals will remain. This cannot be undone.")){transactions=[];saveTransactions();renderTransactions();$("formMessage").textContent="All transactions cleared."; }});
-  $("date").value=localDate();
-  $("year").textContent=new Date().getFullYear();
-  if ($("monthLabel")) $("monthLabel").textContent=new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"});
-  renderTransactions();renderGoals();loadExchangeRates();
+  $("date").value=localDate();$("year").textContent=new Date().getFullYear();renderTransactions();renderGoals();loadExchangeRates();
 })();
