@@ -81,3 +81,17 @@ footer{color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:.5px}
 
 /* Island Ledger concept visual language — applied without replacing the existing app features. */
 
+
+/* Clearer dashboard hierarchy and a collapsible Budget Studio */
+.budget-studio{padding:0;overflow:hidden}
+.budget-summary-trigger{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:19px 22px;cursor:pointer;list-style:none}
+.budget-summary-trigger::-webkit-details-marker{display:none}
+.budget-summary-trigger>span:first-child{display:grid;gap:5px}
+.budget-summary-trigger small{color:var(--green);font:10px 'DM Mono',monospace;letter-spacing:1px}
+.budget-summary-trigger strong{font-size:19px;letter-spacing:-.5px}
+.budget-summary-trigger em{font-size:11px;color:var(--muted);font-style:normal}
+.budget-plus{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:var(--mint);color:var(--green);font-size:20px;transition:transform .2s}
+.budget-studio[open] .budget-plus{transform:rotate(45deg)}
+.budget-content{padding:0 22px 22px;border-top:1px solid var(--line)}
+.budget-content>.eyebrow{padding-top:16px}
+@media(max-width:700px){.budget-summary-trigger{padding:16px}.budget-content{padding:0 16px 16px}.budget-summary-trigger em{line-height:1.5}}
