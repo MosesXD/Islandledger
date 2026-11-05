@@ -1,12 +1,45 @@
 (() => {
   const TX_KEY = "island-ledger-transactions-v1";
   const GOAL_KEY = "island-ledger-goals-v1";
+  const SETTINGS_KEY = "island-ledger-settings-v1";
+  const CURRENCIES = [
+    ["TTD","Trinidad and Tobago Dollar"],["XCD","East Caribbean Dollar"],["BBD","Barbadian Dollar"],
+    ["JMD","Jamaican Dollar"],["BSD","Bahamian Dollar"],["BZD","Belize Dollar"],["GYD","Guyanese Dollar"],
+    ["SRD","Surinamese Dollar"],["HTG","Haitian Gourde"],["DOP","Dominican Peso"],["CUP","Cuban Peso"],
+    ["AWG","Aruban Florin"],["XCG","Caribbean Guilder"],["KYD","Cayman Islands Dollar"],["BMD","Bermudian Dollar"],
+    ["USD","US Dollar"],["EUR","Euro"],["GBP","British Pound"],["CAD","Canadian Dollar"]
+  ];
   const $ = id => document.getElementById(id);
   const money = new Intl.NumberFormat("en-TT", {style:"currency", currency:"TTD"});
+  const formatMoney = (amount, currency) => {
+    try { return new Intl.NumberFormat(undefined,{style:"currency",currency}).format(amount); }
+    catch { return currency + " " + Number(amount).toFixed(2); }
+  };
+  let settings = {displayCurrency:"TTD"};
+  try {
+    const storedSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+    if (storedSettings && CURRENCIES.some(([code])=>code===storedSettings.displayCurrency)) settings.displayCurrency=storedSettings.displayCurrency;
+  } catch (e) {}
+  let rates = null;
+  const convertAmount = (amount, from, to) => {
+    if (from===to) return amount;
+    if (!rates || !rates[from] || !rates[to]) return null;
+    return amount / rates[from] * rates[to];
+  };
+  const displayAmount = transaction => convertAmount(transaction.amount,transaction.currency||"TTD",settings.displayCurrency);
+  function populateCurrencySelect(select, selected) {
+    if (!select) return;
+    select.replaceChildren();
+    CURRENCIES.forEach(([code,name])=>{
+      const option=document.createElement("option");
+      option.value=code; option.textContent=code+" · "+name; select.append(option);
+    });
+    select.value=selected;
+  }
   let transactions = [], goals = [];
   try {
     const saved = JSON.parse(localStorage.getItem(TX_KEY) || "[]");
-    if (Array.isArray(saved)) transactions = saved.filter(t => t && typeof t.id==="string" && typeof t.description==="string" && Number.isFinite(t.amount) && t.amount>0 && ["income","expense"].includes(t.type) && typeof t.category==="string" && typeof t.date==="string");
+    if (Array.isArray(saved)) transactions = saved.filter(t => t && typeof t.id==="string" && typeof t.description==="string" && Number.isFinite(t.amount) && t.amount>0 && ["income","expense"].includes(t.type) && typeof t.category==="string" && typeof t.date==="string").map(t=>({...t,currency:CURRENCIES.some(([code])=>code===(t.currency||"TTD"))?(t.currency||"TTD"):"TTD"}));
   } catch (e) { console.warn("Could not read saved entries", e); }
   try {
     const saved = JSON.parse(localStorage.getItem(GOAL_KEY) || "[]");
@@ -18,19 +51,24 @@
   function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
   function makeId(){return crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`;}
   function renderTransactions(){
-    const income=transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
-    const expenses=transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
-    $("incomeTotal").textContent=money.format(income);$("expenseTotal").textContent=money.format(expenses);$("balanceTotal").textContent=money.format(income-expenses);
+    const income=transactions.filter(t=>t.type==="income").reduce((s,t)=>s+(displayAmount(t)??0),0);
+    const expenses=transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+(displayAmount(t)??0),0);
+    $("incomeTotal").textContent=formatMoney(income,settings.displayCurrency);$("expenseTotal").textContent=formatMoney(expenses,settings.displayCurrency);$("balanceTotal").textContent=formatMoney(income-expenses,settings.displayCurrency);
+    if ($("displayCurrency")) $("displayCurrency").value=settings.displayCurrency;
+    if (rates && transactions.some(t=>displayAmount(t)===null) && $("rateNote")) $("rateNote").textContent="Some currency rates are unavailable; affected amounts are excluded from converted totals.";
     const list=$("transactionList");list.replaceChildren();$("emptyState").hidden=transactions.length>0;
     [...transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt-a.createdAt).forEach(t=>{
       const li=el("li","transaction"),info=el("div","transaction-info");
       info.append(el("strong","",t.description),el("small","",`${t.category} · ${t.date}`));
-      const amount=el("span",`amount ${t.type}`,`${t.type==="income"?"+":"−"}${money.format(t.amount)}`);
+      const converted=displayAmount(t);
+      const shown=converted===null?formatMoney(t.amount,t.currency||"TTD"):formatMoney(converted,settings.displayCurrency);
+      const original=(t.currency||"TTD")!==settings.displayCurrency&&converted!==null?" · "+formatMoney(t.amount,t.currency||"TTD"):"";
+      const amount=el("span",`amount ${t.type}`,`${t.type==="income"?"+":"−"}${shown}${original}`);
       const remove=el("button","remove","×");remove.type="button";remove.setAttribute("aria-label",`Delete ${t.description}`);
       remove.addEventListener("click",()=>{transactions=transactions.filter(x=>x.id!==t.id);saveTransactions();renderTransactions();});
       li.append(info,amount,remove);list.append(li);
     });
-    const totals=new Map();transactions.filter(t=>t.type==="expense").forEach(t=>totals.set(t.category,(totals.get(t.category)||0)+t.amount));
+    const totals=new Map();transactions.filter(t=>t.type==="expense").forEach(t=>{const value=displayAmount(t);if(value!==null)totals.set(t.category,(totals.get(t.category)||0)+value);});
     const area=$("categoryBreakdown");area.replaceChildren();const entries=[...totals.entries()].sort((a,b)=>b[1]-a[1]);
     if(!entries.length){area.textContent="Add an expense to see categories.";return;}
     entries.forEach(([name,value])=>{const row=el("div","category"),head=el("div","category-head");head.append(el("strong","",name),el("span","",money.format(value)));const bar=el("div","bar");const fill=el("span");fill.style.width=`${value/entries[0][1]*100}%`;bar.append(fill);row.append(head,bar);area.append(row);});
@@ -52,7 +90,7 @@
   $("transactionForm").addEventListener("submit",e=>{
     e.preventDefault();const data=new FormData(e.currentTarget);const description=String(data.get("description")||"").trim();const amount=Number(data.get("amount"));const type=String(data.get("type"));const category=String(data.get("category"));const date=String(data.get("date"));
     if(!description||!Number.isFinite(amount)||amount<=0||!date||!["income","expense"].includes(type)){$("formMessage").textContent="Check the description, amount, type, and date.";return;}
-    transactions.push({id:makeId(),description,amount:Math.round(amount*100)/100,type,category,date,createdAt:Date.now()});saveTransactions();renderTransactions();e.currentTarget.reset();$("date").value=localDate();$("formMessage").textContent="Transaction added."; $("description").focus();
+    const currency=CURRENCIES.some(([code])=>code===data.get("currency"))?String(data.get("currency")):"TTD";transactions.push({id:makeId(),description,amount:Math.round(amount*100)/100,type,category,date,currency,createdAt:Date.now()});saveTransactions();renderTransactions();e.currentTarget.reset();$("date").value=localDate();$("formMessage").textContent="Transaction added."; $("description").focus();
   });
   $("goalForm").addEventListener("submit",e=>{
     e.preventDefault();const name=$("goalName").value.trim(),target=Number($("goalTarget").value),saved=Number($("goalSaved").value);
@@ -176,6 +214,29 @@
   });
   refreshSavedPlanOptions();renderBudgetCategories();
 
+  populateCurrencySelect($("displayCurrency"),settings.displayCurrency);
+  populateCurrencySelect($("transactionCurrency"),"TTD");
+  if ($("monthLabel")) $("monthLabel").textContent=new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  $("displayCurrency").addEventListener("change",()=>{
+    settings.displayCurrency=$("displayCurrency").value;
+    try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch(e){}
+    renderTransactions();
+  });
+  async function loadExchangeRates(){
+    const note=$("rateNote");
+    try{
+      if(note)note.textContent="Updating exchange rates…";
+      const response=await fetch("https://open.er-api.com/v6/latest/TTD",{cache:"no-store"});
+      if(!response.ok)throw new Error("Rate service unavailable");
+      const data=await response.json();
+      if(data.result!=="success"||!data.rates)throw new Error("Rate data unavailable");
+      rates=data.rates;
+      if(note)note.textContent="Rates last updated "+new Date(data.time_last_update_utc||Date.now()).toLocaleString()+" · Indicative rates, not bank quotes.";
+      renderTransactions();
+    }catch(error){
+      if(note)note.textContent="Exchange rates couldn't load. TTD transactions still work; foreign-currency totals need a connection.";
+    }
+  }
   $("clearButton").addEventListener("click",()=>{if(!transactions.length){$("formMessage").textContent="No entries to clear.";return;}if(confirm("Delete all transactions saved in this browser? Savings goals will remain. This cannot be undone.")){transactions=[];saveTransactions();renderTransactions();$("formMessage").textContent="All transactions cleared."; }});
-  $("date").value=localDate();$("year").textContent=new Date().getFullYear();renderTransactions();renderGoals();
+  $("date").value=localDate();$("year").textContent=new Date().getFullYear();renderTransactions();renderGoals();loadExchangeRates();
 })();
