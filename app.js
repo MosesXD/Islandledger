@@ -78,15 +78,18 @@
     if (rates && transactions.some(t=>displayAmount(t)===null) && $("rateNote")) $("rateNote").textContent="Some currency rates are unavailable; affected amounts are excluded from converted totals.";
     const list=$("transactionList");list.replaceChildren();$("emptyState").hidden=transactions.length>0;
     [...transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt-a.createdAt).forEach(t=>{
-      const li=el("li","transaction"),info=el("div","transaction-info");
-      info.append(el("strong","",t.description),el("small","",`${t.category} · ${t.date}`));
+      const tr=el("tr","transaction-row");
+      const description=el("td","transaction-description");description.dataset.label="Transaction";
+      description.append(el("strong","",t.description),el("small","",t.type==="income"?"Income":"Expense"));
+      const category=el("td","");category.dataset.label="Category";category.textContent=t.category;
+      const date=el("td","");date.dataset.label="Date";date.textContent=t.date;
       const converted=displayAmount(t);
       const shown=converted===null?formatMoney(t.amount,t.currency||"TTD"):formatMoney(converted,settings.displayCurrency);
       const original=(t.currency||"TTD")!==settings.displayCurrency&&converted!==null?" · "+formatMoney(t.amount,t.currency||"TTD"):"";
-      const amount=el("span",`amount ${t.type}`,`${t.type==="income"?"+":"−"}${shown}${original}`);
-      const remove=el("button","remove","×");remove.type="button";remove.setAttribute("aria-label",`Delete ${t.description}`);
+      const amount=el("td",`align-right amount ${t.type}`,`${t.type==="income"?"+":"−"}${shown}${original}`);amount.dataset.label="Amount";
+      const action=el("td","row-action");action.dataset.label="";const remove=el("button","remove","×");remove.type="button";remove.setAttribute("aria-label",`Delete ${t.description}`);
       remove.addEventListener("click",()=>{transactions=transactions.filter(x=>x.id!==t.id);saveTransactions();renderTransactions();});
-      li.append(info,amount,remove);list.append(li);
+      action.append(remove);tr.append(description,category,date,amount,action);list.append(tr);
     });
     const totals=new Map();transactions.filter(t=>t.type==="expense").forEach(t=>{const value=displayAmount(t);if(value!==null)totals.set(t.category,(totals.get(t.category)||0)+value);});
     const area=$("categoryBreakdown");area.replaceChildren();const entries=[...totals.entries()].sort((a,b)=>b[1]-a[1]);
