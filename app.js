@@ -87,9 +87,10 @@
       const shown=converted===null?formatMoney(t.amount,t.currency||"TTD"):formatMoney(converted,settings.displayCurrency);
       const original=(t.currency||"TTD")!==settings.displayCurrency&&converted!==null?" · "+formatMoney(t.amount,t.currency||"TTD"):"";
       const amount=el("td",`align-right amount ${t.type}`,`${t.type==="income"?"+":"−"}${shown}${original}`);amount.dataset.label="Amount";
-      const action=el("td","row-action");action.dataset.label="";const remove=el("button","remove","×");remove.type="button";remove.setAttribute("aria-label",`Delete ${t.description}`);
+      const action=el("td","row-action");action.dataset.label="";const edit=el("button","textbutton","Edit"),remove=el("button","remove","×");edit.type="button";remove.type="button";edit.setAttribute("aria-label",`Edit ${t.description}`);remove.setAttribute("aria-label",`Delete ${t.description}`);
+      edit.addEventListener("click",()=>{const description=prompt("Transaction description:",t.description);if(description===null)return;const amountText=prompt(`Amount (${t.currency||"TTD"}):`,String(t.amount));if(amountText===null)return;const category=prompt("Category:",t.category);if(category===null)return;const date=prompt("Date (YYYY-MM-DD):",t.date);if(date===null)return;const amount=Number(amountText),cleanDescription=description.trim(),cleanCategory=category.trim();if(!cleanDescription||cleanDescription.length>80||!Number.isFinite(amount)||amount<=0||!cleanCategory||cleanCategory.length>60||!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date+"T00:00:00"))||new Date(date+"T00:00:00").toISOString().slice(0,10)!==date){alert("Please enter a description, valid positive amount, category and date.");return;}t.description=cleanDescription;t.amount=roundMoney(amount);t.category=cleanCategory;t.date=date;saveTransactions();renderTransactions();});
       remove.addEventListener("click",()=>{transactions=transactions.filter(x=>x.id!==t.id);saveTransactions();renderTransactions();});
-      action.append(remove);tr.append(description,category,date,amount,action);list.append(tr);
+      action.append(edit,remove);tr.append(description,category,date,amount,action);list.append(tr);
     });
     const totals=new Map();transactions.filter(t=>t.type==="expense").forEach(t=>{const value=displayAmount(t);if(value!==null)totals.set(t.category,(totals.get(t.category)||0)+value);});
     const area=$("categoryBreakdown");area.replaceChildren();const entries=[...totals.entries()].sort((a,b)=>b[1]-a[1]);
