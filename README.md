@@ -8,6 +8,7 @@ A TTD personal-budget learning prototype built with HTML, CSS, and vanilla JavaS
 - Group expense totals by category.
 - Create savings goals with target amounts and starting savings.
 - Manually add savings to a goal and see its progress bar update.
+- Edit transaction descriptions, amounts, categories and dates with input validation.
 - Delete transactions or goals; clear transactions with confirmation.
 - Persist transactions and goals in this browser with `localStorage`.
 
@@ -22,7 +23,7 @@ This is not a bank connection, secure accounting product, financial advice, or a
 
 ## Roadmap
 - [ ] Month/date filter.
-- [ ] Edit transactions and goal details.
+- [ ] Edit savings-goal details.
 - [ ] CSV export/import with validation.
 - [ ] Budget limits per category and monthly summaries.
 - [ ] Unit tests for totals and input validation.
