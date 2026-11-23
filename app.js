@@ -106,11 +106,12 @@
       head.append(el("strong","",g.name),el("span","",`${money.format(g.saved)} / ${money.format(g.target)}`));
       const track=el("div","bar goal-bar"),fill=el("span");fill.style.width=`${Math.min(100,(g.saved/g.target)*100)}%`;track.append(fill);
       const meta=el("div","goal-meta",`${Math.min(100,Math.round(g.saved/g.target*100))}% saved`);
-      const actions=el("div","goal-actions"),add=el("button","","Add savings"),remove=el("button","textbutton","Delete");
-      add.type="button";remove.type="button";
+      const actions=el("div","goal-actions"),add=el("button","","Add savings"),edit=el("button","textbutton","Edit"),remove=el("button","textbutton","Delete");
+      add.type="button";edit.type="button";remove.type="button";
       add.addEventListener("click",()=>{const raw=prompt(`How much have you added to “${g.name}” (TTD)?`);if(raw===null)return;const amount=Number(raw);if(!Number.isFinite(amount)||amount<=0){alert("Enter an amount greater than zero.");return;}g.saved=Math.round((g.saved+amount)*100)/100;saveGoals();renderGoals();});
+      edit.addEventListener("click",()=>{const name=prompt("Savings goal name:",g.name);if(name===null)return;const targetText=prompt("Target amount (TTD):",String(g.target));if(targetText===null)return;const cleanName=name.trim(),target=Number(targetText);if(!cleanName||cleanName.length>60||!Number.isFinite(target)||target<=0){alert("Enter a goal name (up to 60 characters) and a target greater than zero.");return;}g.name=cleanName;g.target=roundMoney(target);saveGoals();renderGoals();});
       remove.addEventListener("click",()=>{if(confirm(`Delete the savings goal “${g.name}”?`)){goals=goals.filter(x=>x.id!==g.id);saveGoals();renderGoals();}});
-      actions.append(add,remove);card.append(head,track,meta,actions);list.append(card);
+      actions.append(add,edit,remove);card.append(head,track,meta,actions);list.append(card);
     });
   }
   $("transactionForm").addEventListener("submit",e=>{
