@@ -33,3 +33,5 @@ body.light-theme{color-scheme:light;--bg:#f2efff;--surface:#fff;--surface2:#f7f4
  table td.row-action{grid-column:2;grid-row:3;text-align:right}
  table td.row-action:before{display:none}
 }
+
+.activity-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.activity-actions button:disabled{opacity:.45;cursor:not-allowed}
