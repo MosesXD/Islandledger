@@ -1,3 +1,4 @@
+import { buildTransactionsCsv } from "./csv-export.mjs";
 (() => {
   const TX_KEY = "island-ledger-official-v3-transactions";
   const GOAL_KEY = "island-ledger-official-v3-goals";
@@ -76,7 +77,7 @@
     renderMoneyFlow();
     if ($("displayCurrency")) $("displayCurrency").value=settings.displayCurrency;
     if (rates && transactions.some(t=>displayAmount(t)===null) && $("rateNote")) $("rateNote").textContent="Some currency rates are unavailable; affected amounts are excluded from converted totals.";
-    const list=$("transactionList");list.replaceChildren();$("emptyState").hidden=transactions.length>0;
+    const list=$("transactionList");list.replaceChildren();$("emptyState").hidden=transactions.length>0;$("exportTransactions").disabled=transactions.length===0;
     [...transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt-a.createdAt).forEach(t=>{
       const tr=el("tr","transaction-row");
       const description=el("td","transaction-description");description.dataset.label="Transaction";
@@ -284,6 +285,18 @@
       if(note)note.textContent="Exchange rates couldn't load. TTD transactions still work; foreign-currency totals need a connection.";
     }
   }
+  $("exportTransactions").addEventListener("click",()=>{
+    if(!transactions.length){$("formMessage").textContent="Add a transaction before exporting.";return;}
+    const ordered=[...transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt-a.createdAt);
+    const csv=buildTransactionsCsv(ordered);
+    const blob=new Blob(["\\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;link.download="islandledger-transactions-"+localDate()+".csv";
+    document.body.append(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    $("formMessage").textContent="Transaction CSV exported. It contains original amounts and currencies.";
+  });
   $("clearButton").addEventListener("click",()=>{if(!transactions.length){$("formMessage").textContent="No entries to clear.";return;}if(confirm("Delete all transactions saved in this browser? Savings goals will remain. This cannot be undone.")){transactions=[];saveTransactions();renderTransactions();$("formMessage").textContent="All transactions cleared."; }});
   $("date").value=localDate();$("year").textContent=new Date().getFullYear();renderTransactions();renderGoals();loadExchangeRates();
 })();
