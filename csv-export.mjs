@@ -1,4 +1,4 @@
-const FORMULA_PREFIX = /^[\\s]*[=+@-]/;
+const FORMULA_PREFIX = /^\s*[=+@-]/;
 
 function csvCell(value) {
   let text = String(value ?? "");
@@ -18,5 +18,5 @@ export function buildTransactionsCsv(transactions) {
       transaction.currency || "TTD",
     ]),
   ];
-  return rows.map((row) => row.map(csvCell).join(",")).join("\\r\\n") + "\\r\\n";
+  return rows.map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
