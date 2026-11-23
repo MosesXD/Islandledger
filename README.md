@@ -10,6 +10,7 @@ A TTD personal-budget learning prototype built with HTML, CSS, and vanilla JavaS
 - Manually add savings to a goal and see its progress bar update.
 - Edit a savings goal's name and target amount while preserving its saved progress.
 - Edit transaction descriptions, amounts, categories and dates with input validation.
+- Export transaction history to CSV with spreadsheet-formula injection protection.
 - Delete transactions or goals; clear transactions with confirmation.
 - Persist transactions and goals in this browser with `localStorage`.
 

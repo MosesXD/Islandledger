@@ -1,0 +1,31 @@
+name: Validate IslandLedger CSV export
+
+on:
+  pull_request:
+    paths:
+      - "csv-export.mjs"
+      - "tests/csv-export.test.mjs"
+      - ".github/workflows/validate-csv-export.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "csv-export.mjs"
+      - "tests/csv-export.test.mjs"
+      - ".github/workflows/validate-csv-export.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  csv-export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check CSV module syntax
+        run: node --check csv-export.mjs
+      - name: Run CSV export tests
+        run: node --test tests/csv-export.test.mjs
