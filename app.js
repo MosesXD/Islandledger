@@ -289,7 +289,7 @@ import { buildTransactionsCsv } from "./csv-export.mjs";
     if(!transactions.length){$("formMessage").textContent="Add a transaction before exporting.";return;}
     const ordered=[...transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt-a.createdAt);
     const csv=buildTransactionsCsv(ordered);
-    const blob=new Blob(["\\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+    const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);
     const link=document.createElement("a");
     link.href=url;link.download="islandledger-transactions-"+localDate()+".csv";
