@@ -20,3 +20,7 @@ export function buildTransactionsCsv(transactions) {
   ];
   return rows.map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
+
+export function buildTransactionsCsvFileContent(transactions) {
+  return "\uFEFF" + buildTransactionsCsv(transactions);
+}
