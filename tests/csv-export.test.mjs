@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildTransactionsCsv } from "../csv-export.mjs";
+import { buildTransactionsCsv, buildTransactionsCsvFileContent } from "../csv-export.mjs";
 
 test("exports original transaction fields and currencies with CRLF rows", () => {
   const csv = buildTransactionsCsv([{ date: "2026-11-23", type: "expense", description: "Lunch", category: "Food", amount: 25.5, currency: "TTD" }]);
@@ -20,4 +20,11 @@ test("neutralises spreadsheet formula-like text fields, including whitespace pre
 
 test("handles empty transaction lists with a CRLF-terminated header row", () => {
   assert.equal(buildTransactionsCsv([]), '"Date","Type","Description","Category","Amount","Currency"\r\n');
+});
+
+test("prefixes the exported file content with the actual UTF-8 BOM character", () => {
+  const content = buildTransactionsCsvFileContent([]);
+  assert.equal(content.charCodeAt(0), 0xFEFF);
+  assert.ok(content.startsWith("\uFEFF"));
+  assert.ok(content.includes('"Date","Type","Description","Category","Amount","Currency"'));
 });

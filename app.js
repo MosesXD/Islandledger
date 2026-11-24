@@ -1,4 +1,4 @@
-import { buildTransactionsCsv } from "./csv-export.mjs";
+import { buildTransactionsCsvFileContent } from "./csv-export.mjs";
 (() => {
   const TX_KEY = "island-ledger-official-v3-transactions";
   const GOAL_KEY = "island-ledger-official-v3-goals";
@@ -288,8 +288,8 @@ import { buildTransactionsCsv } from "./csv-export.mjs";
   $("exportTransactions").addEventListener("click",()=>{
     if(!transactions.length){$("formMessage").textContent="Add a transaction before exporting.";return;}
     const ordered=[...transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt-a.createdAt);
-    const csv=buildTransactionsCsv(ordered);
-    const blob=new Blob(["\\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+    const csv=buildTransactionsCsvFileContent(ordered);
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);
     const link=document.createElement("a");
     link.href=url;link.download="islandledger-transactions-"+localDate()+".csv";
